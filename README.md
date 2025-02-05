@@ -81,6 +81,15 @@ router.post('/register' ,authController.register)
 //export
 module.exports = router
 ```
+### -- and use in index.js
+```JS
+//import router ...
+const authRouter = require("./routes/auth-route")
+
+//routing(
+app.use("/api",authRouter)
+
+```
 test code by postman 
 
 ## Step 7 controller handle error 
@@ -98,7 +107,7 @@ const handleErrors = (err,req,res,next)=>{
 module.exports = handleErrors
 ```
 
-and use in index.js
+### -- and use in index.js
 ```js
 //import handle error ...
 const handleErrors = require("./middlewares/error")
@@ -180,7 +189,7 @@ router.post('/login', validateWithZod(loginSchema),authController.login)
 
 ```
 #### --step 8.3 check already exist
-prisma  /schema.prisma 
+/schema.prisma 
 ```bash
 npx prisma db push
 npx prisma migrate dev --name init
@@ -192,9 +201,9 @@ const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 
 module.exports = prisma
-
 ```
-auth contollers
+
+controllers/auth-contollers.js
 ```JS
         // step 3 :: check already exist
         const checkEmail = await prisma.profile.findFirst({
@@ -211,6 +220,7 @@ auth contollers
 const bcrypt = require("bcryptjs")
 ```
 ```JS
+        // step 4 :: encrypt bcrypt
         const salt = bcrypt.genSaltSync(10)
         const hashedPassword = bcrypt.hashSync(password,salt)
         console.log(hashedPassword)
@@ -230,3 +240,61 @@ const bcrypt = require("bcryptjs")
 ```
 
 #### --step 8.6 response
+```JS
+res.json({message:`hello ${ firstname } ... register complete`})
+```
+
+## Step 9 login 
+#### --step 9.1 req.body
+```JS
+const { email, password } = req.body
+```
+#### --step 9.2  validate email and password
+```JS
+        const profile = await prisma.profile.findFirst({
+            where: {
+                email:email 
+            }
+        }) //--profile is obj  console.log(profile)
+        if(!profile) {
+            return createError(400,"email or password is invalid")
+        }
+
+        const isMatch = bcrypt.compareSync( password , profile.password )
+        // -- isMatch is booleen  console.log(isMatch) 
+        if(!isMatch){
+            return createError(400,"email or password is invalid")
+        }
+```
+#### --step 9.3 generate token
+```JS
+const jwt = require("jsonwebtoken")
+```
+ENV file
+```JS
+SECRET = cc19
+```
+```JS
+        // --create object without password
+        const payload = {
+            id:profile.id,
+            email:profile.email,
+            firstname:profile.firstname,
+            lastname:profile.lastname,
+            role:profile.role
+        }
+        // --create token
+        const token = jwt.sign(payload,process.env.SECRET, {
+            expiresIn: "1d"
+        })
+
+```
+#### --step 9.4 response to front
+```JS
+        res.json({
+            message:"Login success",
+            payload:payload,
+            token: token })
+
+
+```

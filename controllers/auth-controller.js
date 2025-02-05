@@ -1,6 +1,7 @@
 const prisma = require("../configs/prisma")
 const createError = require("../utils/createError")
 const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
 
 exports.register = async (req,res,next)=>{
 
@@ -46,7 +47,7 @@ exports.register = async (req,res,next)=>{
                 password: hashedPassword 
             }
         })
-        
+
         // step 6 :: response
         res.json({message:`hello ${ firstname } ... register complete`})
     } catch (err) {
@@ -55,11 +56,67 @@ exports.register = async (req,res,next)=>{
     }
 }
 
-exports.login = (req,res,next)=>{
+
+//----------------------------------------------------------------------
+exports.login = async (req,res,next)=>{
     try {
         //console.log(xxx)
-        res.json({message:"Hello login"})
+        //login step --------------------
+        // step 1 :: req.body
+        // step 2 :: validate email and password
+        // step 3 :: generate token
+        // step 4 :: response
+        //----------------------------------
+
+        // step 1 :: req.body
+        const { email, password } = req.body
+
+        // step 2 :: validate email and password
+        const profile = await prisma.profile.findFirst({
+            where: {
+                email:email 
+            }
+        }) //--profile is obj  console.log(profile)
+        if(!profile) {
+            return createError(400,"email or password is invalid")
+        }
+
+        const isMatch = bcrypt.compareSync( password , profile.password )
+        // -- isMatch is booleen  console.log(isMatch) 
+        if(!isMatch){
+            return createError(400,"email or password is invalid")
+        }
+        
+        // step 3 :: generate token
+        // --create object without password
+        const payload = {
+            id:profile.id,
+            email:profile.email,
+            firstname:profile.firstname,
+            lastname:profile.lastname,
+            role:profile.role
+        }
+        // --create token
+        const token = jwt.sign(payload,process.env.SECRET, {
+            expiresIn: "1d"
+        })
+        
+        
+        // step 4 :: response to front
+        res.json({
+            message:"Login success",
+            payload:payload,
+            token: token })
     } catch (err) {
         next(err)
+    }
+}
+
+//----------------------------------------------------------------------
+exports.currentUser = async (req,res,next)=>{
+    try {
+        res.json({message:"hello , current user"})
+    } catch (error) {
+        next(error)
     }
 }

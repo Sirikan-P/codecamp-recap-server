@@ -5,6 +5,7 @@ const morgan = require('morgan')
 
 //import router ...
 const authRouter = require("./routes/auth-route")
+const userRouter = require("./routes/user-route")
 
 //import handle error ...
 const handleErrors = require("./middlewares/error")
@@ -17,8 +18,9 @@ app.use(cors()) // Allows cross domain front/back
 app.use(morgan("dev")) //Show log terminal
 app.use(express.json()) // read json 
 
-//routing
+//routing(
 app.use("/api",authRouter)
+app.use('/api',userRouter)
 
 //handle error
 app.use(handleErrors) 
