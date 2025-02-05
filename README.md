@@ -298,3 +298,32 @@ SECRET = cc19
 
 
 ```
+## STEP 10 current-user
+/controllers/auth-controller.js
+```JS
+exports.currentUser = async (req,res,next)=>{
+    try {
+        res.json({message:"hello , current user"})
+    } catch (error) {
+        next(error)
+    }
+}
+```
+/routes/auth-route.js
+```JS
+router.get('/currentuser',authController.currentUser)
+```
+
+
+## STEP 11 user controller & Route
+/controllers/user-controller.js
+```JS
+```
+
+/routes/user-route.js
+```JS
+```
+
+update index.js
+```JS
+```
