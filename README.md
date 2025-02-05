@@ -7,7 +7,7 @@ create file index.js
 ## step 2 install library ...
 ```bash
 npm install express cors nodemon morgan dotenv bcryptjs  jsonwebtoken zod
-npx prisma init
+npx prisma init -y
 ```
 
 ## step 3 Git ...
@@ -124,18 +124,109 @@ git push
 ```
 when clone add . after link to extract file clone 
 
-## Step 8 register 
+## Step 8 authen  
+controller
 
-
-#### step 8.1 request body
+#### --step 8.1 request body
 postman sent body 
 ```JS
 const { email , firstname , lastname, password , confirmPassword } = req.body
 ```
-#### step 8.2 validate
+#### --step 8.2 validate
+//middlewares/validators.js
 ```JS
+const { z } = require("zod")
+
+exports.registerSchema = z.object({
+    email: z.string().email("check email format"),
+    firstname: z.string().min(3, "firstname more than 3 characters"),
+    lastname: z.string().min(3, "Lastname more than 3 characters"),
+    password: z.string().min(6, "password at least 6 characters"),
+    confirmPassword: z.string().min(6, "confirm password at least 6 characters")
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "confirm password incorrect",
+    path: ['confirmPassword']
+})
+
+exports.loginSchema = z.object({
+    email: z.string().email("check email format"),
+    password: z.string().min(6, "password at least 6 characters"),
+
+})
+
+exports.validateWithZod = (schema) => (req, res, next) => {
+    try {
+        console.log('hello middleware')
+        schema.parse(req.body) // call 
+        next() //*** next step controller */
+    } catch (error) {
+        //console.log(error.errors[1].message)
+        //prepare error
+        const errMsg = error.errors.map((el) => el.message)
+        const errTxt = errMsg.join(",")
+        const mergeError = new Error(errTxt)
+        next(mergeError)
+    }
+}
+```
+and then update code auth-route.js
+```JS
+//import validator 
+const { validateWithZod ,registerSchema, loginSchema } = require("../middlewares/validators")
+
+//@ENDPOINT http://localhost:8000/api/register
+router.post('/register', validateWithZod(registerSchema), authController.register)
+router.post('/login', validateWithZod(loginSchema),authController.login)
 
 ```
+#### --step 8.3 check already exist
+prisma  /schema.prisma 
+```bash
+npx prisma db push
+npx prisma migrate dev --name init
+```
+
+config/prisma.js
 ```JS
+const { PrismaClient } = require("@prisma/client")
+const prisma = new PrismaClient()
+
+module.exports = prisma
 
 ```
+auth contollers
+```JS
+        // step 3 :: check already exist
+        const checkEmail = await prisma.profile.findFirst({
+            where: {
+                email: email,
+            }
+        })
+
+```
+
+
+#### --step 8.4 encrypt bcrypt password
+```JS
+const bcrypt = require("bcryptjs")
+```
+```JS
+        const salt = bcrypt.genSaltSync(10)
+        const hashedPassword = bcrypt.hashSync(password,salt)
+        console.log(hashedPassword)
+```
+
+#### --step 8.5 insert to DB
+```JS
+        const profile = await prisma.profile.create({
+            data:{
+                email : email ,
+                firstname : firstname,
+                lastname: lastname ,
+                password: hashedPassword 
+            }
+        })
+
+```
+
+#### --step 8.6 response
