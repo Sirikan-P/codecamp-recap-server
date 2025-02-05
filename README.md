@@ -6,7 +6,7 @@ create file index.js
 
 ## step 2 install library ...
 ```bash
-npm install express cors nodemon morgan dotenv bcryptjs  jsonwebtoken
+npm install express cors nodemon morgan dotenv bcryptjs  jsonwebtoken zod
 npx prisma init
 ```
 
@@ -114,4 +114,28 @@ and change in try_catch
     } catch (err) {
         next(err)
     }
+```
+
+### when update code in GITHUB
+```bash
+git add .
+git commit -m "message"
+git push
+```
+when clone add . after link to extract file clone 
+
+## Step 8 register 
+
+
+#### step 8.1 request body
+postman sent body 
+```JS
+const { email , firstname , lastname, password , confirmPassword } = req.body
+```
+#### step 8.2 validate
+```JS
+
+```
+```JS
+
 ```
